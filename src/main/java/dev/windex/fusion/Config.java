@@ -30,6 +30,8 @@ public final class Config {
     public int panelRgb = 0x101D2A;
     public int textRgb = 0xF4FBFF;
     public int particleRgb = 0xC6F2FF;
+    public int analyzerRgb = 0x57D1FF;
+    public int autoTotemDelayTicks = 4;
     public boolean arcticParticles = true;
     public String preset = "DONUT";
 
@@ -104,6 +106,8 @@ public final class Config {
         panelRgb &= 0xFFFFFF;
         textRgb &= 0xFFFFFF;
         particleRgb &= 0xFFFFFF;
+        analyzerRgb &= 0xFFFFFF;
+        autoTotemDelayTicks = clamp(autoTotemDelayTicks, 1, 20);
         if (preset == null) preset = "DONUT";
     }
 
