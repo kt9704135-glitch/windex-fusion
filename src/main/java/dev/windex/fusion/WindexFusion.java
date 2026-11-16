@@ -17,6 +17,8 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Items;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.math.BlockPos;
@@ -60,6 +62,21 @@ public final class WindexFusion implements ClientModInitializer {
             worldEnteredAt = System.currentTimeMillis();
         }
         if (client.world == null || client.player == null) return;
+        if (config.on(Module.AUTO_SPRINT) && client.options.forwardKey.isPressed()
+                && !client.player.isSneaking() && !client.player.isSprinting()) {
+            client.player.setSprinting(true);
+        }
+        if (config.on(Module.AUTO_TOTEM) && ticks % config.autoTotemDelayTicks == 0
+                && client.interactionManager != null && client.currentScreen == null
+                && !client.player.getOffHandStack().isOf(Items.TOTEM_OF_UNDYING)) {
+            for (int i=0;i<36;i++) {
+                if (!client.player.getInventory().getStack(i).isOf(Items.TOTEM_OF_UNDYING)) continue;
+                int slot = i < 9 ? 36 + i : i;
+                client.interactionManager.clickSlot(client.player.playerScreenHandler.syncId,
+                        slot,40,SlotActionType.SWAP,client.player);
+                break;
+            }
+        }
         if (config.on(Module.PLAYER)) {
             for (PlayerEntity player : client.world.getPlayers()) {
                 if (player == client.player || player.isSpectator()) continue;
