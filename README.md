@@ -1,4 +1,6 @@
-# Windex Client Recode — Arctic Edition (Fabric 1.21.11)
+# Windex Client Recode — PvP Edition (Fabric 1.21.11)
+
+This is a **work-in-progress PvP rebuild**. It currently includes visible-inventory Auto Totem, Auto Sprint, Trigger Bot, and a Target HUD with a Prestige-inspired Arctic GUI. Features from other supplied clients have **not** all been ported. This is an original implementation, not a combined or repacked set of cracked JARs. Grim or other anticheat bypass compatibility has not been validated.
 
 Arctic Edition adds the icy-blue/white interface and animated menu snow. Prestige-inspired combat modules are planned but **not yet integrated**; this is currently the Fusion scouting foundation.
 

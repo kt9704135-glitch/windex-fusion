@@ -9,7 +9,9 @@ public enum Module {
     TERRAIN("Terrain analyzer", "Marks artificial-looking surface changes"),
     STORAGE("Storage radar", "Lists storage block entities in loaded chunks"),
     AUTO_TOTEM("Auto Totem", "Refills your offhand using an available totem"),
-    AUTO_SPRINT("Auto Sprint", "Sprints while moving forward when possible");
+    AUTO_SPRINT("Auto Sprint", "Sprints while moving forward when possible"),
+    TRIGGER_BOT("Trigger Bot", "Attacks players under your crosshair when ready"),
+    TARGET_HUD("Target HUD", "Shows nearby opponents and their health");
 
     public final String title;
     public final String description;

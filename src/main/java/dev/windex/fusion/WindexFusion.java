@@ -5,7 +5,7 @@ import dev.windex.fusion.analysis.Markers;
 import dev.windex.fusion.analysis.ParticleCorrelator;
 import dev.windex.fusion.analysis.WorldAnalyzer;
 import dev.windex.fusion.gui.FusionScreen;
-import dev.windex.fusion.gui.RadarHud;
+import dev.windex.fusion.gui.PvpHud;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -13,6 +13,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ingame.InventoryScreen;
+import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.world.ClientWorld;
@@ -38,6 +40,10 @@ public final class WindexFusion implements ClientModInitializer {
     private ClientWorld lastWorld;
     private long worldEnteredAt;
     private int ticks;
+    private int totemStage;
+    private int totemSlot=-1;
+    private int totemStageTick;
+    private InventoryScreen autoOpenedInventory;
 
     @Override
     public void onInitializeClient() {
@@ -51,7 +57,7 @@ public final class WindexFusion implements ClientModInitializer {
                 client.setScreen(client.currentScreen instanceof FusionScreen ? null : new FusionScreen());
             tick(client);
         });
-        HudRenderCallback.EVENT.register((ctx, delta) -> RadarHud.render(ctx, this));
+        HudRenderCallback.EVENT.register((ctx, delta) -> PvpHud.render(ctx, this));
         LOGGER.info("Windex Fusion 1.21.11: {} profile active", config.preset);
     }
 
@@ -66,32 +72,64 @@ public final class WindexFusion implements ClientModInitializer {
                 && !client.player.isSneaking() && !client.player.isSprinting()) {
             client.player.setSprinting(true);
         }
-        if (config.on(Module.AUTO_TOTEM) && ticks % config.autoTotemDelayTicks == 0
-                && client.interactionManager != null && client.currentScreen == null
-                && !client.player.getOffHandStack().isOf(Items.TOTEM_OF_UNDYING)) {
-            for (int i=0;i<36;i++) {
-                if (!client.player.getInventory().getStack(i).isOf(Items.TOTEM_OF_UNDYING)) continue;
-                int slot = i < 9 ? 36 + i : i;
-                client.interactionManager.clickSlot(client.player.playerScreenHandler.syncId,
-                        slot,40,SlotActionType.SWAP,client.player);
-                break;
-            }
+        tickAutoTotem(client);
+        if (config.on(Module.TRIGGER_BOT) && client.currentScreen == null
+                && client.crosshairTarget instanceof EntityHitResult result
+                && result.getEntity() instanceof PlayerEntity target
+                && target != client.player && !target.isSpectator()
+                && client.player.getAttackCooldownProgress(0f) >= 0.98f
+                && client.interactionManager != null) {
+            client.interactionManager.attackEntity(client.player,target);
+            client.player.swingHand(net.minecraft.util.Hand.MAIN_HAND);
         }
-        if (config.on(Module.PLAYER)) {
-            for (PlayerEntity player : client.world.getPlayers()) {
-                if (player == client.player || player.isSpectator()) continue;
-                BlockPos p = player.getBlockPos();
-                markers.upsert(Markers.Kind.PLAYER, player.getUuidAsString(),
-                        p.getX(),p.getY(),p.getZ(),100,
-                        "Visible player entity: "+player.getName().getString(), 5000);
-            }
-        }
-        if (++ticks % 2 == 0) analyzer.tick(client, config);
+        ++ticks;
         if (ticks % 40 == 0) {
             markers.purge();
             particles.prune(System.currentTimeMillis(), config.spawnerWindowSeconds*1000L);
             lights.prune(System.currentTimeMillis(), config.lightWindowSeconds*1000L);
         }
+    }
+
+    /** Visible inventory-based totem refill, never hijacking an already open GUI. */
+    private void tickAutoTotem(MinecraftClient client) {
+        if (!config.on(Module.AUTO_TOTEM) || client.player == null
+                || client.interactionManager == null) {
+            endAutoTotem(client);
+            return;
+        }
+        if (totemStage > 0 && client.currentScreen != autoOpenedInventory) {
+            // The player switched screens; leave their UI alone.
+            totemStage=0;
+            autoOpenedInventory=null;
+            return;
+        }
+        if (totemStage == 1) {
+            if (++totemStageTick < config.autoTotemDelayTicks) return;
+            client.interactionManager.clickSlot(client.player.playerScreenHandler.syncId,
+                    totemSlot,40,SlotActionType.SWAP,client.player);
+            totemStage=2;totemStageTick=0;
+            return;
+        }
+        if (totemStage == 2) {
+            if (++totemStageTick >= 2) endAutoTotem(client);
+            return;
+        }
+        if (client.currentScreen != null || client.player.getOffHandStack().isOf(Items.TOTEM_OF_UNDYING)) return;
+        for (int i=0;i<36;i++) {
+            if (!client.player.getInventory().getStack(i).isOf(Items.TOTEM_OF_UNDYING)) continue;
+            totemSlot = i < 9 ? 36 + i : i;
+            autoOpenedInventory = new InventoryScreen(client.player);
+            client.setScreen(autoOpenedInventory);
+            totemStage=1;totemStageTick=0;
+            return;
+        }
+    }
+
+    private void endAutoTotem(MinecraftClient client) {
+        if (autoOpenedInventory != null && client.currentScreen == autoOpenedInventory) {
+            client.setScreen(null);
+        }
+        totemStage=0;totemStageTick=0;totemSlot=-1;autoOpenedInventory=null;
     }
 
     /** Called only when the client particle engine actually receives/spawns a particle. */

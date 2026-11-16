@@ -34,8 +34,6 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-// AnalysisSelfTest is a standalone main() self-check, not a JUnit test class.
-// Gradle 9 fails on an empty discovered suite by default.
 tasks.named('test', Test) {
     failOnNoDiscoveredTests = false
 }

@@ -3,13 +3,12 @@
   "id": "windexfusion",
   "version": "${version}",
   "name": "Windex Client Recode",
-  "description": "Arctic Edition client with customizable scouting and visual utilities for Minecraft 1.21.11.",
+  "description": "Arctic Edition PvP client for Minecraft 1.21.11.",
   "authors": ["Windex"],
   "environment": "client",
   "entrypoints": {
     "client": ["dev.windex.fusion.WindexFusion"]
   },
-  "mixins": ["windexfusion.mixins.json"],
   "depends": {
     "fabricloader": ">=0.19.0",
     "minecraft": "~1.21.11",

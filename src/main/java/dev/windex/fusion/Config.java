@@ -36,7 +36,8 @@ public final class Config {
     public String preset = "DONUT";
 
     public Config() {
-        for (Module module : Module.values()) enabled.put(module, true);
+        for (Module module : Module.values()) enabled.put(module,
+                module != Module.TRIGGER_BOT && module != Module.TARGET_HUD);
     }
 
     public static Config load() {
@@ -92,7 +93,8 @@ public final class Config {
 
     private void validate() {
         if (enabled == null) enabled = new EnumMap<>(Module.class);
-        for (Module module : Module.values()) enabled.putIfAbsent(module, true);
+        for (Module module : Module.values()) enabled.putIfAbsent(module,
+                module != Module.TRIGGER_BOT && module != Module.TARGET_HUD);
         scanRadiusChunks = clamp(scanRadiusChunks, 1, 6);
         scanBlocksPerTick = clamp(scanBlocksPerTick, 100, 1500);
         susMinEvidence = clamp(susMinEvidence, 2, 30);

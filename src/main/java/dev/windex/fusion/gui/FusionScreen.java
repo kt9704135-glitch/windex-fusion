@@ -36,7 +36,7 @@ public final class FusionScreen extends Screen {
         x = (width-w)/2;
         y = (height-h)/2;
         int side = Math.min(180, Math.max(110,w/4));
-        String[] pages = {"Finders", "Analyzers", "Combat", "Movement", "Visual", "Settings"};
+        String[] pages = {"Combat", "Movement", "Visual", "Settings"};
         for (int i=0;i<pages.length;i++) {
             final int selected=i;
             add(button(pages[i],x+13,y+96+i*39,side-26,29,
@@ -49,14 +49,12 @@ public final class FusionScreen extends Screen {
         addDrawableChild(search);
         add(button("FIND",x+w-68,y+45,52,22,this::clearAndInit));
         if (page == 0) {
-            modules(new Module[]{Module.SPAWNER,Module.PLAYER,Module.STORAGE},y+105);
+            modules(new Module[]{Module.AUTO_TOTEM,Module.TRIGGER_BOT},y+105);
         } else if (page == 1) {
-            modules(new Module[]{Module.SUS,Module.CAVE,Module.TERRAIN,Module.DEEPSLATE},y+105);
-        } else if(page == 2) {
-            modules(new Module[]{Module.AUTO_TOTEM},y+105);
-        } else if(page == 3) {
             modules(new Module[]{Module.AUTO_SPRINT},y+105);
-        } else if(page==5) {
+        } else if(page==2) {
+            modules(new Module[]{Module.TARGET_HUD},y+105);
+        } else if(page==3) {
             initConfig();
         }
         add(button("SAVE", x+w-93,y+h-30,79,19,
@@ -91,7 +89,7 @@ public final class FusionScreen extends Screen {
     private void drawControls(DrawContext ctx,int mouseX,int mouseY,int accent) {
         for (Control control:controls) {
             boolean hover=control.contains(mouseX,mouseY);
-            boolean selected=(control.y>=y+96 && control.y<=y+96+5*39
+            boolean selected=(control.y>=y+96 && control.y<=y+96+3*39
                     && control.x==x+13 && (control.y-(y+96))/39==page);
             int fill=selected?0xCB11465D:(hover?0xD52A435A:0xA20A172A);
             rounded(ctx,control.x,control.y,control.x+control.width,control.y+control.height,fill);
@@ -119,39 +117,16 @@ public final class FusionScreen extends Screen {
     private void initConfig() {
         Config c = WindexFusion.INSTANCE.config;
         int side=Math.min(180, Math.max(110,w/4));
-        int b=(w-side-72)/4;
-        for (int i=0;i<4;i++) {
-            String profile = new String[]{"DONUT","PERFORMANCE","BALANCED","DEEP"}[i];
-            add(button(profile,x+side+14+i*(b+9),y+131,b,23,() -> {
-                c.preset(profile); clearAndInit();
-            }));
-        }
-        increment("Scan radius",y+185,()-> c.scanRadiusChunks=Math.max(1,c.scanRadiusChunks-1),
-                ()-> c.scanRadiusChunks=Math.min(6,c.scanRadiusChunks+1));
-        increment("Sus threshold",y+218,()-> c.susMinEvidence=Math.max(2,c.susMinEvidence-1),
-                ()-> c.susMinEvidence=Math.min(30,c.susMinEvidence+1));
-        increment("Particle samples",y+251,()-> c.spawnerMinEachParticle=Math.max(2,c.spawnerMinEachParticle-1),
-                ()-> c.spawnerMinEachParticle=Math.min(15,c.spawnerMinEachParticle+1));
-        increment("Light updates",y+284,()-> c.lightUpdatesForAlert=Math.max(3,c.lightUpdatesForAlert-1),
-                ()-> c.lightUpdatesForAlert=Math.min(30,c.lightUpdatesForAlert+1));
-        add(button(c.showHud?"HUD ON":"HUD OFF",x+side+17,y+332,108,22,
-                ()->{c.showHud=!c.showHud;c.save();clearAndInit();}));
-        add(button("CHANGE COLOUR",x+side+129,y+332,140,22,()->{
-            int[] palette={0x9B6CFF,0x48D4C5,0xFF81B1,0xFFBD66,0x66A9FF};
+        increment("Auto Totem delay",y+141,()-> c.autoTotemDelayTicks=Math.max(1,c.autoTotemDelayTicks-1),
+                ()-> c.autoTotemDelayTicks=Math.min(20,c.autoTotemDelayTicks+1));
+        add(button("ACCENT COLOUR",x+side+17,y+211,140,26,()->{
+            int[] palette={0x6AD5FF,0xFFFFFF,0x9B6CFF,0x48D4C5,0xFF81B1};
             int idx=0;
             for(int i=0;i<palette.length;i++) if(palette[i]==c.accentRgb) idx=i;
             c.accentRgb=palette[(idx+1)%palette.length];c.save();clearAndInit();
         }));
-        add(button("COORDS "+(c.showCoordinates?"ON":"OFF"),x+side+273,y+332,107,22,
-                ()->{c.showCoordinates=!c.showCoordinates;c.save();clearAndInit();}));
-        add(button(c.arcticParticles?"SNOW FX ON":"SNOW FX OFF",x+side+384,y+332,140,22,
+        add(button(c.arcticParticles?"SNOW FX ON":"SNOW FX OFF",x+side+17,y+257,140,26,
                 ()->{c.arcticParticles=!c.arcticParticles;c.save();clearAndInit();}));
-        add(button("CHUNK SQUARE COLOUR",x+side+17,y+370,166,22,()->{
-            int[] colors={0x57D1FF,0xFFFFFF,0x8A74FF,0xFF75C8,0x65FFC7,0xFFE37B};
-            int next=0;
-            for (int i=0;i<colors.length;i++) if (colors[i]==c.analyzerRgb) next=(i+1)%colors.length;
-            c.analyzerRgb=colors[next];c.save();clearAndInit();
-        }));
     }
 
     private void increment(String label,int posY,Runnable dec,Runnable inc) {
@@ -185,14 +160,13 @@ public final class FusionScreen extends Screen {
         ctx.fill(x+9,y+49,x+w-9,y+50,0x55687595);
         ctx.drawTextWithShadow(textRenderer,UiFont.text("WINDEX"),x+17,y+19,0xFF000000|c.textRgb);
         ctx.drawTextWithShadow(textRenderer,"RECODE",x+17,y+35,accent);
-        ctx.drawTextWithShadow(textRenderer,UiFont.text(new String[]{"Finders", "Analyzers", "Combat", "Movement", "Visual", "Settings"}[page]+" Modules"),x+side+18,y+17,0xFF000000|c.textRgb);
+        ctx.drawTextWithShadow(textRenderer,UiFont.text(new String[]{"Combat", "Movement", "Visual", "Settings"}[page]+" Modules"),x+side+18,y+17,0xFF000000|c.textRgb);
         ctx.drawTextWithShadow(textRenderer,"ARCTIC EDITION  /  1.21.11",x+side+18,y+31,0xFFB8E8FF);
-        if (page>=0 && page<=3) {
+        if (page>=0 && page<=2) {
             Module[] modules = switch(page) {
-                case 0 -> new Module[]{Module.SPAWNER,Module.PLAYER,Module.STORAGE};
-                case 1 -> new Module[]{Module.SUS,Module.CAVE,Module.TERRAIN,Module.DEEPSLATE};
-                case 2 -> new Module[]{Module.AUTO_TOTEM};
-                default -> new Module[]{Module.AUTO_SPRINT};
+                case 0 -> new Module[]{Module.AUTO_TOTEM,Module.TRIGGER_BOT};
+                case 1 -> new Module[]{Module.AUTO_SPRINT};
+                default -> new Module[]{Module.TARGET_HUD};
             };
             int start=y+105;
             int shown=0;
@@ -205,13 +179,11 @@ public final class FusionScreen extends Screen {
                 ctx.drawTextWithShadow(textRenderer,UiFont.text(m.title),x+side+28,row+1,0xFF000000|c.textRgb);
                 ctx.drawTextWithShadow(textRenderer,UiFont.text(m.description),x+side+28,row+21,0xFFB5BDD6);
             }
-        } else if (page==5) {
-            ctx.drawTextWithShadow(textRenderer,"PROFILES   "+c.preset,x+side+19,y+110,accent);
-            ctx.drawTextWithShadow(textRenderer,"Scan radius: "+c.scanRadiusChunks+" chunks",x+side+23,y+191,0xFFE6E6FA);
-            ctx.drawTextWithShadow(textRenderer,"Sus evidence threshold: "+c.susMinEvidence,x+side+23,y+224,0xFFE6E6FA);
-            ctx.drawTextWithShadow(textRenderer,"Smoke + flame each: "+c.spawnerMinEachParticle,x+side+23,y+257,0xFFE6E6FA);
-            ctx.drawTextWithShadow(textRenderer,"Light alert after: "+c.lightUpdatesForAlert,x+side+23,y+290,0xFFE6E6FA);
-            ctx.fill(x+side+192,y+372,x+side+218,y+390,0xFF000000|c.analyzerRgb);
+        } else if (page==3) {
+            ctx.drawTextWithShadow(textRenderer,"PVP SETTINGS",x+side+19,y+107,accent);
+            ctx.drawTextWithShadow(textRenderer,"Auto Totem delay: "+c.autoTotemDelayTicks+" ticks",x+side+23,y+147,0xFFE6F5FF);
+            ctx.drawTextWithShadow(textRenderer,"Theme accent",x+side+173,y+220,0xFFE6F5FF);
+            ctx.fill(x+side+264,y+214,x+side+290,y+233,accent);
         } else {
             ctx.drawTextWithShadow(textRenderer,"No modules installed in this category yet",x+side+26,y+108,0xFFB5D9E9);
         }
