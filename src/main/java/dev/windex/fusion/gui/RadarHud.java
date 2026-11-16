@@ -47,7 +47,18 @@ public final class RadarHud {
             int py = ry+rh/2+(int)Math.round(dz*(rh/2.-5)/config.renderDistanceBlocks);
             px = Math.max(rx+3, Math.min(rx+rw-3, px));
             py = Math.max(ry+3, Math.min(ry+rh-3, py));
-            context.fill(px-2,py-2,px+3,py+3,0xFF000000|m.kind().rgb);
+            boolean chunkMarker = m.kind()==Markers.Kind.SUS || m.kind()==Markers.Kind.CAVE
+                    || m.kind()==Markers.Kind.TERRAIN;
+            if (chunkMarker) {
+                int side=Math.max(5,(int)Math.round(16.0*(rw-10)/config.renderDistanceBlocks));
+                int square=0xFF000000|config.analyzerRgb;
+                context.fill(px-side/2,py-side/2,px+(side+1)/2,py+(side+1)/2,
+                        0x66000000|config.analyzerRgb);
+                context.fill(px-side/2,py-side/2,px+(side+1)/2,py-side/2+1,square);
+                context.fill(px-side/2,py+(side-1)/2,px+(side+1)/2,py+(side+1)/2,square);
+            } else {
+                context.fill(px-2,py-2,px+3,py+3,0xFF000000|m.kind().rgb);
+            }
         }
         int y = top+143;
         if (rows == 0) {
