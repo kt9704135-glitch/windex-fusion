@@ -5,11 +5,12 @@ import dev.windex.fusion.Module;
 import dev.windex.fusion.WindexFusion;
 import dev.windex.fusion.analysis.Markers;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class FusionScreen extends Screen {
@@ -17,11 +18,19 @@ public final class FusionScreen extends Screen {
     private int x,y,w,h;
     private String query = "";
     private TextFieldWidget search;
+    private final List<Control> controls = new ArrayList<>();
+
+    private record Control(String label,int x,int y,int width,int height,Runnable action) {
+        boolean contains(double px,double py) {
+            return px>=x && px<x+width && py>=y && py<y+height;
+        }
+    }
 
     public FusionScreen() { super(Text.literal("Windex Client Recode")); }
 
     @Override
     protected void init() {
+        controls.clear();
         w = Math.min(950,width-20);
         h = Math.min(540,height-20);
         x = (width-w)/2;
@@ -54,12 +63,45 @@ public final class FusionScreen extends Screen {
                 () -> WindexFusion.INSTANCE.config.save()));
     }
 
-    private ButtonWidget button(String text,int bx,int by,int bw,int bh,Runnable action) {
-        return ButtonWidget.builder(Text.literal(text), b -> action.run())
-                .dimensions(bx,by,bw,bh).build();
+    private Control button(String text,int bx,int by,int bw,int bh,Runnable action) {
+        return new Control(text,bx,by,bw,bh,action);
     }
 
-    private ButtonWidget add(ButtonWidget button) {return addDrawableChild(button);}
+    private Control add(Control control) {controls.add(control);return control;}
+
+    @Override
+    public boolean mouseClicked(Click click,boolean doubled) {
+        if (click.button()==0) {
+            for (Control control : List.copyOf(controls)) {
+                if (control.contains(click.x(),click.y())) {
+                    control.action().run();
+                    return true;
+                }
+            }
+        }
+        return super.mouseClicked(click,doubled);
+    }
+
+    private void rounded(DrawContext ctx,int ax,int ay,int bx,int by,int color) {
+        ctx.fill(ax+4,ay,bx-4,by,color);
+        ctx.fill(ax,ay+4,bx,by-4,color);
+        ctx.fill(ax+2,ay+2,bx-2,by-2,color);
+    }
+
+    private void drawControls(DrawContext ctx,int mouseX,int mouseY,int accent) {
+        for (Control control:controls) {
+            boolean hover=control.contains(mouseX,mouseY);
+            boolean selected=(control.y>=y+96 && control.y<=y+96+5*39
+                    && control.x==x+13 && (control.y-(y+96))/39==page);
+            int fill=selected?0xCB11465D:(hover?0xD52A435A:0xA20A172A);
+            rounded(ctx,control.x,control.y,control.x+control.width,control.y+control.height,fill);
+            if(selected)ctx.fill(control.x,control.y+5,control.x+2,control.y+control.height-5,accent);
+            if(hover)ctx.fill(control.x+5,control.y+control.height-2,control.x+control.width-5,control.y+control.height-1,accent);
+            ctx.drawCenteredTextWithShadow(textRenderer,control.label,
+                    control.x+control.width/2,control.y+(control.height-9)/2,
+                    selected?0xFFFFFFFF:0xFFDCEAF5);
+        }
+    }
 
     private void modules(Module[] modules,int start) {
         Config config = WindexFusion.INSTANCE.config;
@@ -176,6 +218,7 @@ public final class FusionScreen extends Screen {
         ctx.fill(x+10,y+h-42,x+w-10,y+h-41,0x444D5B73);
         ctx.drawTextWithShadow(textRenderer,"RSHIFT menu  /  ESC close  |  Clues are not proof",x+18,y+h-27,0xFF97A2BA);
         super.render(ctx,mouseX,mouseY,delta);
+        drawControls(ctx,mouseX,mouseY,accent);
     }
 
     @Override public boolean shouldPause() {return false;}
