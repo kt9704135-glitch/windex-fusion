@@ -20,6 +20,7 @@ import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Items;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
@@ -44,6 +45,8 @@ public final class WindexFusion implements ClientModInitializer {
     private int totemSlot=-1;
     private int totemStageTick;
     private InventoryScreen autoOpenedInventory;
+    private boolean autoEating;
+    private int eatPreviousSlot=-1;
 
     @Override
     public void onInitializeClient() {
@@ -73,6 +76,7 @@ public final class WindexFusion implements ClientModInitializer {
             client.player.setSprinting(true);
         }
         tickAutoTotem(client);
+        tickAutoEat(client);
         if (config.on(Module.TRIGGER_BOT) && client.currentScreen == null
                 && client.crosshairTarget instanceof EntityHitResult result
                 && result.getEntity() instanceof PlayerEntity target
@@ -130,6 +134,40 @@ public final class WindexFusion implements ClientModInitializer {
             client.setScreen(null);
         }
         totemStage=0;totemStageTick=0;totemSlot=-1;autoOpenedInventory=null;
+    }
+
+    private void tickAutoEat(MinecraftClient client) {
+        if (!config.on(Module.AUTO_EAT) || client.player == null || client.currentScreen != null
+                || client.player.getHungerManager().getFoodLevel() > config.autoEatHungerThreshold) {
+            stopAutoEat(client);
+            return;
+        }
+        if (autoEating) {
+            if (client.player.getMainHandStack().contains(DataComponentTypes.FOOD)) {
+                client.options.useKey.setPressed(true);
+                return;
+            }
+            stopAutoEat(client);
+        }
+        if (client.options.useKey.isPressed()) return; // Never override a real right-click.
+        for (int i=0;i<9;i++) {
+            if (!client.player.getInventory().getStack(i).contains(DataComponentTypes.FOOD)) continue;
+            eatPreviousSlot=client.player.getInventory().getSelectedSlot();
+            client.player.getInventory().setSelectedSlot(i);
+            autoEating=true;
+            client.options.useKey.setPressed(true);
+            break;
+        }
+    }
+
+    private void stopAutoEat(MinecraftClient client) {
+        if (!autoEating) return;
+        client.options.useKey.setPressed(false);
+        if (client.player != null && eatPreviousSlot>=0) {
+            client.player.getInventory().setSelectedSlot(eatPreviousSlot);
+        }
+        eatPreviousSlot=-1;
+        autoEating=false;
     }
 
     /** Called only when the client particle engine actually receives/spawns a particle. */

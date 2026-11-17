@@ -32,12 +32,13 @@ public final class Config {
     public int particleRgb = 0xC6F2FF;
     public int analyzerRgb = 0x57D1FF;
     public int autoTotemDelayTicks = 4;
+    public int autoEatHungerThreshold = 12;
     public boolean arcticParticles = true;
     public String preset = "DONUT";
 
     public Config() {
         for (Module module : Module.values()) enabled.put(module,
-                module != Module.TRIGGER_BOT && module != Module.TARGET_HUD);
+                module != Module.TRIGGER_BOT && module != Module.TARGET_HUD && module != Module.AUTO_EAT);
     }
 
     public static Config load() {
@@ -94,7 +95,7 @@ public final class Config {
     private void validate() {
         if (enabled == null) enabled = new EnumMap<>(Module.class);
         for (Module module : Module.values()) enabled.putIfAbsent(module,
-                module != Module.TRIGGER_BOT && module != Module.TARGET_HUD);
+                module != Module.TRIGGER_BOT && module != Module.TARGET_HUD && module != Module.AUTO_EAT);
         scanRadiusChunks = clamp(scanRadiusChunks, 1, 6);
         scanBlocksPerTick = clamp(scanBlocksPerTick, 100, 1500);
         susMinEvidence = clamp(susMinEvidence, 2, 30);
@@ -110,6 +111,7 @@ public final class Config {
         particleRgb &= 0xFFFFFF;
         analyzerRgb &= 0xFFFFFF;
         autoTotemDelayTicks = clamp(autoTotemDelayTicks, 1, 20);
+        autoEatHungerThreshold = clamp(autoEatHungerThreshold, 1, 19);
         if (preset == null) preset = "DONUT";
     }
 

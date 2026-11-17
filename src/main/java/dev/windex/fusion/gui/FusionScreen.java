@@ -49,11 +49,11 @@ public final class FusionScreen extends Screen {
         addDrawableChild(search);
         add(button("FIND",x+w-68,y+45,52,22,this::clearAndInit));
         if (page == 0) {
-            modules(new Module[]{Module.AUTO_TOTEM,Module.TRIGGER_BOT},y+105);
+            modules(new Module[]{Module.AUTO_TOTEM,Module.TRIGGER_BOT,Module.AUTO_EAT},y+105);
         } else if (page == 1) {
             modules(new Module[]{Module.AUTO_SPRINT},y+105);
         } else if(page==2) {
-            modules(new Module[]{Module.TARGET_HUD},y+105);
+            modules(new Module[]{Module.TARGET_HUD,Module.KEYSTROKES,Module.CROSSHAIR},y+105);
         } else if(page==3) {
             initConfig();
         }
@@ -119,6 +119,8 @@ public final class FusionScreen extends Screen {
         int side=Math.min(180, Math.max(110,w/4));
         increment("Auto Totem delay",y+141,()-> c.autoTotemDelayTicks=Math.max(1,c.autoTotemDelayTicks-1),
                 ()-> c.autoTotemDelayTicks=Math.min(20,c.autoTotemDelayTicks+1));
+        increment("Auto Eat hunger",y+177,()->c.autoEatHungerThreshold=Math.max(1,c.autoEatHungerThreshold-1),
+                ()->c.autoEatHungerThreshold=Math.min(19,c.autoEatHungerThreshold+1));
         add(button("ACCENT COLOUR",x+side+17,y+211,140,26,()->{
             int[] palette={0x6AD5FF,0xFFFFFF,0x9B6CFF,0x48D4C5,0xFF81B1};
             int idx=0;
@@ -164,9 +166,9 @@ public final class FusionScreen extends Screen {
         ctx.drawTextWithShadow(textRenderer,"ARCTIC EDITION  /  1.21.11",x+side+18,y+31,0xFFB8E8FF);
         if (page>=0 && page<=2) {
             Module[] modules = switch(page) {
-                case 0 -> new Module[]{Module.AUTO_TOTEM,Module.TRIGGER_BOT};
+                case 0 -> new Module[]{Module.AUTO_TOTEM,Module.TRIGGER_BOT,Module.AUTO_EAT};
                 case 1 -> new Module[]{Module.AUTO_SPRINT};
-                default -> new Module[]{Module.TARGET_HUD};
+                default -> new Module[]{Module.TARGET_HUD,Module.KEYSTROKES,Module.CROSSHAIR};
             };
             int start=y+105;
             int shown=0;
@@ -182,6 +184,7 @@ public final class FusionScreen extends Screen {
         } else if (page==3) {
             ctx.drawTextWithShadow(textRenderer,"PVP SETTINGS",x+side+19,y+107,accent);
             ctx.drawTextWithShadow(textRenderer,"Auto Totem delay: "+c.autoTotemDelayTicks+" ticks",x+side+23,y+147,0xFFE6F5FF);
+            ctx.drawTextWithShadow(textRenderer,"Auto Eat below: "+c.autoEatHungerThreshold+" hunger",x+side+23,y+183,0xFFE6F5FF);
             ctx.drawTextWithShadow(textRenderer,"Theme accent",x+side+173,y+220,0xFFE6F5FF);
             ctx.fill(x+side+264,y+214,x+side+290,y+233,accent);
         } else {
