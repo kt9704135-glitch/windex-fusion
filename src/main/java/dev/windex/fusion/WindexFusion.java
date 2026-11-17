@@ -152,8 +152,8 @@ public final class WindexFusion implements ClientModInitializer {
         if (client.options.useKey.isPressed()) return; // Never override a real right-click.
         for (int i=0;i<9;i++) {
             if (!client.player.getInventory().getStack(i).contains(DataComponentTypes.FOOD)) continue;
-            eatPreviousSlot=client.player.getInventory().selectedSlot;
-            client.player.getInventory().selectedSlot=i;
+            eatPreviousSlot=client.player.getInventory().getSelectedSlot();
+            client.player.getInventory().setSelectedSlot(i);
             autoEating=true;
             client.options.useKey.setPressed(true);
             break;
@@ -164,7 +164,7 @@ public final class WindexFusion implements ClientModInitializer {
         if (!autoEating) return;
         client.options.useKey.setPressed(false);
         if (client.player != null && eatPreviousSlot>=0) {
-            client.player.getInventory().selectedSlot=eatPreviousSlot;
+            client.player.getInventory().setSelectedSlot(eatPreviousSlot);
         }
         eatPreviousSlot=-1;
         autoEating=false;
